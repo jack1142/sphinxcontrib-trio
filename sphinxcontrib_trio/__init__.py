@@ -65,7 +65,12 @@ try:
     from sphinx.domains.python import PyFunction
 except ImportError:
     from sphinx.domains.python import PyModulelevel as PyFunction
-from sphinx.domains.python import PyClassmember, PyObject
+try:
+    from sphinx.domains.python import PyMethod, PyClassMethod, PyDecoratorMethod, PyStaticMethod
+except ImportError:
+    from sphinx.domains.python import PyClassmember as PyMethod
+    PyClassMethod = PyDecoratorMethod = PyStaticMethod = PyMethod
+from sphinx.domains.python import PyObject
 from sphinx.ext.autodoc import (
     FunctionDocumenter, MethodDocumenter, ClassLevelDocumenter, Options, ModuleLevelDocumenter
 )
@@ -221,9 +226,30 @@ class ExtendedPyFunction(ExtendedCallableMixin, PyFunction):
     }
 
 
-class ExtendedPyMethod(ExtendedCallableMixin, PyClassmember):
+class ExtendedPyMethod(ExtendedCallableMixin, PyMethod):
     option_spec = {
-        **PyClassmember.option_spec,
+        **PyMethod.option_spec,
+        **extended_method_option_spec,
+    }
+
+
+class ExtendedPyClassMethod(ExtendedCallableMixin, PyClassMethod):
+    option_spec = {
+        **PyClassMethod.option_spec,
+        **extended_method_option_spec,
+    }
+
+
+class ExtendedPyDecoratorMethod(ExtendedCallableMixin, PyDecoratorMethod):
+    option_spec = {
+        **PyDecoratorMethod.option_spec,
+        **extended_method_option_spec,
+    }
+
+
+class ExtendedPyStaticMethod(ExtendedCallableMixin, PyStaticMethod):
+    option_spec = {
+        **PyStaticMethod.option_spec,
         **extended_method_option_spec,
     }
 
@@ -377,10 +403,10 @@ class ExtendedMethodDocumenter(MethodDocumenter):
 def setup(app):
     app.add_directive_to_domain('py', 'function', ExtendedPyFunction)
     app.add_directive_to_domain('py', 'method', ExtendedPyMethod)
-    app.add_directive_to_domain('py', 'classmethod', ExtendedPyMethod)
-    app.add_directive_to_domain('py', 'staticmethod', ExtendedPyMethod)
+    app.add_directive_to_domain('py', 'classmethod', ExtendedPyClassMethod)
+    app.add_directive_to_domain('py', 'staticmethod', ExtendedPyStaticMethod)
     app.add_directive_to_domain('py', 'decorator', ExtendedPyFunction)
-    app.add_directive_to_domain('py', 'decoratormethod', ExtendedPyMethod)
+    app.add_directive_to_domain('py', 'decoratormethod', ExtendedPyDecoratorMethod)
 
     # Make sure sphinx.ext.autodoc is loaded before we try to mess with it.
     app.setup_extension("sphinx.ext.autodoc")
